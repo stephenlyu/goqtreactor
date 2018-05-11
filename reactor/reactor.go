@@ -35,21 +35,23 @@ func (this *Invoker) onCustomEvent(e *core.QEvent) {
 		return
 	}
 
-	ce.f()
+	ce.call()
 }
 
 
 type CallbackEvent struct {
 	core.QEvent
 
-	f func()
+	f func(...interface{})
+	args []interface{}
 }
 
-func NewCallbackEvent(f func()) *CallbackEvent {
+func NewCallbackEvent(f func(...interface{}), args []interface{}) *CallbackEvent {
 	e := core.NewQEvent(core.QEvent__Type(event_type))
 	ret := &CallbackEvent{
 		QEvent: *e,
 		f: f,
+		args: args,
 	}
 
 	qt.Register(e.Pointer(), ret)
@@ -60,28 +62,33 @@ func NewCallbackEvent(f func()) *CallbackEvent {
 	return ret
 }
 
+func (this *CallbackEvent) call() {
+	this.f(this.args...)
+}
+
 type funcTask struct {
-	f func()
+	f func(...interface{})
+	args []interface{}
 }
 
 func (this *funcTask) Do() {
-	this.f()
+	this.f(this.args...)
 }
 
-func CallFromThread(f func()) {
+func CallFromThread(f func(...interface{}), args ...interface{}) {
 	if atomic.LoadUint32(&initialized) == 0 {
 		panic("reactor uninitialized")
 	}
-	e := NewCallbackEvent(f)
+	e := NewCallbackEvent(f, args)
 	core.QCoreApplication_PostEvent(__invoker, e, int(core.Qt__NormalEventPriority))
 }
 
-func CallInThread(f func()) {
+func CallInThread(f func(...interface{}), args ...interface{}) {
 	if atomic.LoadUint32(&initialized) == 0 {
 		panic("reactor uninitialized")
 	}
 
-	_pool.PostTask(&funcTask{f: f})
+	_pool.PostTask(&funcTask{f: f, args: args})
 }
 
 func Initialize() {

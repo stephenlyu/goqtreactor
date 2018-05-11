@@ -8,11 +8,15 @@ import (
 	"time"
 	"math/rand"
 	"github.com/therecipe/qt/core"
+	"fmt"
 )
 
 var globalScene *widgets.QGraphicsScene
 
-func runInMainThread() {
+func runInMainThread(args ...interface{}) {
+	i, j := args[0].(int), args[1].(int)
+	fmt.Println(i, j)
+
 	x1 := float64(rand.Int() % 400)
 	x2 := float64(rand.Int() % 400)
 	y1 := float64(rand.Int() % 400)
@@ -27,9 +31,10 @@ func runInMainThread() {
 	globalScene.Update(core.NewQRectF())
 }
 
-func run() {
+func run(args ...interface{}) {
+	fmt.Println(args)
 	for {
-		reactor.CallFromThread(runInMainThread)
+		reactor.CallFromThread(runInMainThread, 1, 2)
 		time.Sleep(200 * time.Millisecond)
 	}
 }
@@ -50,7 +55,7 @@ func main() {
 	w.Show()
 
 	reactor.Initialize()
-	reactor.CallInThread(run)
+	reactor.CallInThread(run, "test")
 
 	os.Exit(app.Exec())
 }
