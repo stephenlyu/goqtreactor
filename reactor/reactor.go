@@ -5,6 +5,7 @@ import (
 	"github.com/therecipe/qt"
 	"fmt"
 	"sync/atomic"
+	"runtime"
 )
 
 var event_type = core.QEvent_RegisterEventType(-1)
@@ -48,6 +49,7 @@ type CallbackEvent struct {
 
 func NewCallbackEvent(f func(...interface{}), args []interface{}) *CallbackEvent {
 	e := core.NewQEvent(core.QEvent__Type(event_type))
+	runtime.SetFinalizer(e, nil)
 	ret := &CallbackEvent{
 		QEvent: *e,
 		f: f,
